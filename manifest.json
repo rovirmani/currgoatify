@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "rovirmani",
+    "version": "1.0",
+    "description": "",
+    "permissions": [
+      "activeTab"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["*://twitter.com/*"],
+        "js": ["dist/mainscript.js"]
+        }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["models/*", "LeBummy.jpeg", "curry.jpeg"],
+        "matches": ["<all_urls>"]
+      }
+    ],
+    "author": "rovirmani"
+  }

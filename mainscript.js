@@ -1,4 +1,3 @@
-import * as tf from '@tensorflow/tfjs';
 import * as faceapi from 'face-api.js';
 
 let loaded = false;
@@ -35,8 +34,7 @@ const loadLeImage = async() => {
 
 const imageProcessor = async(img) => {
     // process stuff and call LeBumDetector
-    if (img.naturalHeight <= 50 || img.naturalWidth <= 50) {
-        // image too small
+    if (img.naturalHeight <= 100 || img.naturalWidth <= 100) {
         return;
     }
 
@@ -75,12 +73,26 @@ function applyOverlay(img, overlaySrc) {
     img.classList.add('overlay-applied');
 }
 
+const observeImages = new IntersectionObserver((entries, observer) => {
+    entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+            observer.unobserve(entry.target);
+            await imageProcessor(entry.target)
+        }
+    });
+}, {
+    rootMargin: '0px',
+    thgreshold: 0.1
+});
+
 const detectLeBum = async(src) => {
     console.log('LeMickey Detected?: ');
     const img = await faceapi.fetchImage(src);
-    const checkLeBron = 0; // FIXME: LOAD TRAINED MODEL
+    const checkLeBron = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options()).withFaceLandmarks().withFaceDescriptors();
     if(!checkLeBron.length) {
         // if no model loaded 
         return false;
     }
+    const matcher = new faceapi.FaceMatcher(lebu, 0.6);
 }
+
