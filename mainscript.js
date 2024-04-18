@@ -1,7 +1,8 @@
 import * as faceapi from 'face-api.js';
 
 let loaded = false;
-let targetDescriptor = null;
+let loadedLeMickey = null;
+
 
 const loadModels = async() => {
     const modelURL = chrome.runtime.getURL('models/');
@@ -13,65 +14,83 @@ const loadModels = async() => {
 }
 
 const loadLeImage = async() => {
-    // naive no tensorflow solution 
-    const img = await faceapi.fetchImage(chrome.runtime.getURL('lemickey.jpeg'));
+    const img = await faceapi.fetchImage(chrome.runtime.getURL('LeBummy.jpeg'));
     const detected = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
-
-    //TODO: Error catch if no face detected?
-    // probably not needed since it should obviously have brons face 
+    if (!detected) {
+        throw new Error("No face detected in the image.");
+        return null
+    }
+    console.log(detected.descriptor);
     return new faceapi.LabeledFaceDescriptors('Lebron', [detected.descriptor]);
 }
 
 // load models and bron image for faceMatcher
 (async () => {
     await loadModels();
-    loadedMickey = await loadLeImage();
-    if(!loadedMickey) {
-        console.error('failed to load target descriptor');
+    loadedLeMickey = await loadLeImage();
+    if(!loadedLeMickey) {
+        console.error('failed to load valid lebron image');
         return;
     }
 })();
 
 const imageProcessor = async(img) => {
     // process stuff and call LeBumDetector
-    if (img.naturalHeight <= 100 || img.naturalWidth <= 100) {
+    if (img.naturalHeight <= 50 || img.naturalWidth <= 50) {
         return;
     }
 
     console.log('Started image processing:');
     const LeBumDetected = await detectLeBum(img.src);
-    console.log('LeMickey Detected: ');
-    console.log('Currgoatification incoming.');
 
     if (LeBumDetected) {
+        console.log('Currgoatification incoming.');
         // TODO: make img directory of random curry images 
         // gifs videos etc
+        const overlayedImage = document.createElement('img');
         const randCurrgoat = chrome.runtime.getURL('curry.jpeg');
-        applyOverlay(document.querySelector('img.selector'), randCurrgoat);
+        overlayedImage.src = randCurrgoat;
+        overlayedImage.style.position = 'absolute';
+        overlayedImage.classList.add('overlay');
+
+        const rect = img.getBoundingClientRect();
+        overlayedImage.style.left = `${rect.left + window.scrollX}px`;
+        overlayedImage.style.top = `${rect.top + window.scrollY}px`
+        overlayedImage.style.width = `${rect.width}px`
+        overlayedImage.style.height = `${rect.height}px`
+        
+        document.body.appendChild(overlayedImage);
+        img.style.opacity = '0';
+        img.classList.add('overlayed');
+        // applyOverlay(randCurrgoat, document.querySelector('img.selector'));
     }
-}
+    else {
+        console.log('Not Bron.');
+    }
+};
 
-function createOverlayedImage(sourceUrl, targetImg) {
-    const overlayedImage = document.createElement('img');
-    overlayedImage.src = sourceUrl;
+// const createOverlayedImage = async (sourceUrl, targetImg) => {
+//     const overlayedImage = document.createElement('img');
+//     overlayedImage.src = sourceUrl;
 
-    // add styling
-    overlayedImage.style.position = 'absolute';
-    overlayedImage.classList.add('overlay-applied');
+//     // add styling
+//     overlayedImage.style.position = 'absolute';
+//     overlayedImage.classList.add('overlay-applied');
 
-    const rect = img.getBoundingClientRect();
-    overlayedImage.style.left = `${rect.left + window.scrollX}px`;
-    overlayedImage.style.top = `${rect.top + window.scrollY}px`
-    overlayedImage.style.width = `${rect.width}px`
-    overlayedImage.style.height = `${rect.height}px`
-}
+//     const rect = targetImg.getBoundingClientRect();
+//     overlayedImage.style.left = `${rect.left + window.scrollX}px`;
+//     overlayedImage.style.top = `${rect.top + window.scrollY}px`
+//     overlayedImage.style.width = `${rect.width}px`
+//     overlayedImage.style.height = `${rect.height}px`
+//     return overlayedImage
+// }
 
-function applyOverlay(img, overlaySrc) {
-    const overlayedImage = createOverlayedImage(overlaySrc, img);
-    document.body.appendChild(overlayedImage);
-    img.style.opacity = '0';
-    img.classList.add('overlay-applied');
-}
+// const applyOverlay = async(img, overlaySrc) => {
+//     const overlayedImage = createOverlayedImage(overlaySrc, img);
+//     document.body.appendChild(overlayedImage);
+//     img.style.opacity = '0';
+//     img.classList.add('overlay-applied');
+// }
 
 const observeImages = new IntersectionObserver((entries, observer) => {
     entries.forEach(async (entry) => {
@@ -82,17 +101,44 @@ const observeImages = new IntersectionObserver((entries, observer) => {
     });
 }, {
     rootMargin: '0px',
-    thgreshold: 0.1
+    threshold: 0.1
 });
 
+const setupObservers = () => {
+    document.querySelectorAll('div[data-testid="tweetPhoto"] img').forEach(async img => {
+        observeImages.observe(img);
+    });
+
+    const observeMutations = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.tagName === 'IMG') {
+                    observeImages.observe(node);
+                }
+            });
+        });
+    });
+
+    observeMutations.observe(document.body, { childList: true, subtree: true});
+};
+
+// check if models loaded and lebron image is set as a target
+const intervalObservation = setInterval(() => {
+    if (loaded && loadedLeMickey) {
+        setupObservers();
+        clearInterval(intervalObservation);
+    }
+}, 100);
+
 const detectLeBum = async(src) => {
-    console.log('LeMickey Detected?: ');
+    console.log('detectLeBum: ');
     const img = await faceapi.fetchImage(src);
     const checkLeBron = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options()).withFaceLandmarks().withFaceDescriptors();
     if(!checkLeBron.length) {
-        // if no model loaded 
+        // if no face detected 
         return false;
     }
-    const matcher = new faceapi.FaceMatcher(lebu, 0.6);
+    const matcher = new faceapi.FaceMatcher(loadedLeMickey, 0.5);
+    const bestMatch = checkLeBron.map(d => matcher.findBestMatch(d.descriptor));
+    return bestMatch.some(result => result.label === 'Lebron');
 }
-
