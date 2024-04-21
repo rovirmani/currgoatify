@@ -1,9 +1,10 @@
 import * as faceapi from 'face-api.js';
 
 const MODEL_URL = chrome.runtime.getURL('models/');
-const LEBRON_IMAGE_URL = chrome.runtime.getURL('LeBummy.jpeg');
-const CURRY_IMAGE_URL = chrome.runtime.getURL('curry.jpeg');
+const LEBRON_IMAGE_URL = chrome.runtime.getURL('images/LeBummy.jpeg');
+const CURRY_IMAGE_URL = chrome.runtime.getURL('images/curry.jpeg');
 const TWEET_PHOTO_SELECTOR = 'div[data-testid="tweetPhoto"] img';
+const GOOOGLE_PHOTO_SELECTOR = '';
 
 let loaded = false;
 let loadedLeMickey = null;
