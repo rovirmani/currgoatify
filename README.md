@@ -1,7 +1,5 @@
 # currgoatify
 
-## TODO:
-
-### - [ ] Train model on large set of bron images (old, young, nonbearded, bearded etc.)
-### - [ ] Add support for reddit 
-### - [ ] fix image download script
+## 30 pointers every night.
+### Replace any image containing Lebron with Steph curry
+##### The greatest always win more than they lose.
